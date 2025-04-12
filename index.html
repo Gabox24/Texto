@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <img src="icono.jpg" width="50">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Corrector Ortográfico</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    textarea {
+      width: 96%;
+      height: 200px;
+      font-size: 16px;
+      margin-bottom: 15px;
+      resize: none;
+      overflow-y: auto;
+      padding: 10px;
+      border-radius: 15px;
+
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 15px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .result {
+      margin-top: 20px;
+      background-color: #e2e3e5;
+      padding: 30px;
+      border-bottom: 1px solid #000000;
+      border-top: 1px solid #000000;
+      border-left: 1px solid #000000;
+      border-right: 1px solid #000000;
+      border-radius: 15px;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+  </style>
+
+  <link rel="icon" type="image/png" href="icono.jpg">
+
+</head>
+<body>
+  <div class="container">
+    <h2>Corrector Ortográfico </h2>
+    <textarea id="textInput" placeholder="Escribe tu texto aquí..."></textarea>
+    <button onclick="checkSpelling()">Corregir texto</button>
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    async function checkSpelling() {
+      const text = document.getElementById("textInput").value;
+      const resultDiv = document.getElementById("result");
+      resultDiv.innerHTML = "Analizando...";
+
+      const response = await fetch("https://api.languagetoolplus.com/v2/check", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `text=${encodeURIComponent(text)}&language=es`
+      });
+
+      const data = await response.json();
+
+      if (data.matches.length === 0) {
+        resultDiv.innerHTML = "<strong>¡No se encontraron errores!</strong>";
+        return;
+      }
+
+      let corrected = text;
+      let offsetCorrection = 0;
+
+      data.matches.forEach(match => {
+        if (match.replacements.length > 0) {
+          const replacement = match.replacements[0].value;
+          const start = match.offset + offsetCorrection;
+          const end = start + match.length;
+          corrected = corrected.slice(0, start) + replacement + corrected.slice(end);
+          offsetCorrection += replacement.length - match.length;
+        }
+      });
+
+      resultDiv.innerHTML = `
+        <p><strong>Texto corregido:</strong></p>
+        <div style="white-space: pre-wrap;">${corrected}</div>
+      `;
+    }
+  </script>
+</body>
+</html>
